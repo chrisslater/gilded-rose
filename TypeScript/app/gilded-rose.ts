@@ -1,23 +1,23 @@
-const isImprovedWithTime = (item: Item) => (
-    item.name === 'Aged Brie' || 
-    item.name === 'Backstage passes to a TAFKAL80ETC concert'
-)
+// const isImprovedWithTime = (item: Item) => (
+//     item.name === 'Aged Brie' || 
+//     item.name === 'Backstage passes to a TAFKAL80ETC concert'
+// )
+
+const isExpired = (item: Item) => item.sellIn < 0
+
+const decreaseSellIn = (item: Item) => {
+    item.sellIn = item.sellIn - 1
+    return item
+} 
+
+const reduceQualityToZero = (item: Item) => { 
+    item.quality = 0
+    return item
+}
 
 const increaseItemQuality = (item: Item) => {
     if (item.quality < 50) {
         item.quality = item.quality + 1
-        if (item.name == 'Backstage passes to a TAFKAL80ETC concert') {
-            if (item.sellIn < 11) {
-                if (item.quality < 50) {
-                    item.quality = item.quality + 1
-                }
-            }
-            if (item.sellIn < 6) {
-                if (item.quality < 50) {
-                    item.quality = item.quality + 1
-                }
-            }
-        }
     }
 
     return item
@@ -56,31 +56,42 @@ export class GildedRose {
                 return item
             }
 
-            item.sellIn = item.sellIn - 1;
+            item = decreaseSellIn(item)
 
-            if (isImprovedWithTime(item)) { 
-                // Increase quality
-                item = increaseItemQuality(item)                
-            } else {
-                // Reduce quality
-                item = decreaseItemQuality(item)
-            }
-            
-            if (item.sellIn < 0) {
-                if (item.name === 'Aged Brie') { 
+            switch(item.name) {
+                case 'Aged Brie':
                     item = increaseItemQuality(item)
-                }
 
-                if (item.name === 'Backstage passes to a TAFKAL80ETC concert') {
-                    item.quality = 0
-                }
+                    if (isExpired(item)) {
+                        item = increaseItemQuality(item)
+                    }
+                    return item
+                
+                case 'Backstage passes to a TAFKAL80ETC concert':
+                    item = increaseItemQuality(item)
 
-                if (item.name === '+5 Dexterity Vest') {   
+                    if (item.sellIn < 11) {
+                        item = increaseItemQuality(item)
+                    }
+
+                    if (item.sellIn < 6) {
+                        item = increaseItemQuality(item)
+                    }                    
+
+                    if (isExpired(item)) {
+                        item = reduceQualityToZero(item)
+                    }
+                    return item
+            
+                default:
                     item = decreaseItemQuality(item)
-                }
-            }
 
-            return item
+                    if (isExpired(item)) {
+                        item = decreaseItemQuality(item)
+                    }
+
+                    return item
+            }
         })
     }
 }
