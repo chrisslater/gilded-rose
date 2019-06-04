@@ -1,6 +1,5 @@
 import * as fp from 'lodash/fp'
 
-
 const identity = <I>(i: I): I => i 
 
 const condition = <T>(predicate: (p: T) => boolean, truthy: (p: T) => T, falsey: (p: T) => T = identity) => (item: T): T => 
@@ -19,47 +18,48 @@ const reduceQualityToZero = (item: Item): Item => {
     return item
 }
 
-const increaseItemQuality = (item: Item): Item => {
+const increaseItemQuality = (value: number = 1) => (item: Item): Item => {
     if (item.quality < 50) {
-        item.quality = item.quality + 1
+        item.quality = item.quality + value
     }
 
     return item
 }
 
-const decreaseItemQuality = (item: Item): Item => {
+const increaseItemQualityByOne = increaseItemQuality()
+
+const decreaseItemQuality = (value: number = 1) => (item: Item): Item => {
     if (item.quality > 0) {
-        item.quality = item.quality - 1
+        item.quality = item.quality - value
     }
 
     return item
 }
+
+const decreaseItemQualityByOne = decreaseItemQuality()
 
 const updateCheeseItem = fp.pipe(
-    increaseItemQuality,
-    condition(isExpired, increaseItemQuality)
+    increaseItemQualityByOne,
+    condition(isExpired, increaseItemQualityByOne)
 )
 
 const increaseBackstageQuality = fp.pipe(
-    increaseItemQuality,
-    condition((item) => item.sellIn < 11, increaseItemQuality),
-    condition((item) => item.sellIn < 6, increaseItemQuality),
+    increaseItemQualityByOne,
+    condition((item) => item.sellIn < 11, increaseItemQualityByOne),
+    condition((item) => item.sellIn < 6, increaseItemQualityByOne),
 )
 
 const updateBackstageItem = 
     condition(isExpired, reduceQualityToZero, increaseBackstageQuality)
 
 const updateConjuredItem = fp.pipe(
-    decreaseItemQuality,
-    decreaseItemQuality,
-
-    condition(isExpired, decreaseItemQuality),
-    condition(isExpired, decreaseItemQuality)
+    decreaseItemQuality(2),
+    condition(isExpired, decreaseItemQuality(2)),
 )
 
 const updateDefaultItem = fp.pipe(
-    decreaseItemQuality,
-    condition(isExpired, decreaseItemQuality)
+    decreaseItemQualityByOne,
+    condition(isExpired, decreaseItemQualityByOne)
 )
 
 export class Item {
