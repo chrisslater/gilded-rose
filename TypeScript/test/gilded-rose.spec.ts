@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 import { Item, GildedRose } from '../app/gilded-rose';
 
-const createTest = (name: string) => (initialSellIn: number) => (initialQuality: number) =>  {
+const createTest = (name: string) => (initialSellIn: number) => (initialQuality: number): [number, number] =>  {
     const gildedRose = new GildedRose([new Item(name, initialSellIn, initialQuality)])
     const firstItem = gildedRose.updateQuality()[0]
 
@@ -12,6 +12,16 @@ describe('GildedRose.updateQuality', function () {
     let test: any
     let sellIn: number
     let quality: number
+
+    describe('When nothing is passed into the constructor', () => {
+        beforeEach(() => {
+            test = new GildedRose().updateQuality()
+        })
+
+        it('should return an empty array', () => {
+            expect(test).to.be.empty
+        })
+    })
 
     describe('When item name is `Sulfuras, Hand of Ragnaros`', () => {
         beforeEach(() => {
