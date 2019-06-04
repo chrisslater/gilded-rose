@@ -7,7 +7,6 @@ const condition = <T>(predicate: (p: T) => boolean, truthy: (p: T) => T, falsey:
 
 const isExpired = (item: Item) => item.sellIn < 0
 
-
 const decreaseSellIn = (item: Item): Item => {
     item.sellIn = item.sellIn - 1
     return item
@@ -39,6 +38,7 @@ const decreaseItemQuality = (value: number = 1) => (item: Item): Item => {
 const decreaseItemQualityByOne = decreaseItemQuality()
 
 const updateCheeseItem = fp.pipe(
+    decreaseSellIn,
     increaseItemQualityByOne,
     condition(isExpired, increaseItemQualityByOne)
 )
@@ -49,18 +49,44 @@ const increaseBackstageQuality = fp.pipe(
     condition((item) => item.sellIn < 6, increaseItemQualityByOne),
 )
 
-const updateBackstageItem = 
+const updateBackstageItem = fp.pipe(
+    decreaseSellIn,
     condition(isExpired, reduceQualityToZero, increaseBackstageQuality)
+)
 
 const updateConjuredItem = fp.pipe(
+    decreaseSellIn,
     decreaseItemQuality(2),
     condition(isExpired, decreaseItemQuality(2)),
 )
 
 const updateDefaultItem = fp.pipe(
+    decreaseSellIn,
     decreaseItemQualityByOne,
     condition(isExpired, decreaseItemQualityByOne)
 )
+
+const includesInName = (whatToInclude: string) => (item: Item): boolean => item.name.includes(whatToInclude)
+
+const isSulfuras = includesInName('Sulfuras')
+const isCheese = includesInName('Aged Brie')
+const isBackstage = includesInName('Backstage')
+const isConjured = includesInName('Conjured')
+
+type RuleTuple = [ ( item: Item) => boolean, (item: Item) => Item ]
+
+const rules: RuleTuple[] = [
+    [isSulfuras, identity],
+    [isCheese, updateCheeseItem], 
+    [isBackstage, updateBackstageItem],
+    [isConjured, updateConjuredItem],
+]
+
+const updateItem = (item: Item) => {
+    const rule = rules.find(([checker]) => checker(item))
+
+    return rule ? rule[1](item) : updateDefaultItem(item)
+}
 
 export class Item {
     name: string;
@@ -82,26 +108,6 @@ export class GildedRose {
     }
 
     updateQuality() {
-        return this.items.map((item: Item) => {
-            if (item.name === 'Sulfuras, Hand of Ragnaros') {
-                return item
-            }
-
-            item = decreaseSellIn(item)
-
-            switch(item.name) {
-                case 'Aged Brie':
-                    return updateCheeseItem(item)
-                
-                case 'Backstage passes to a TAFKAL80ETC concert':
-                    return updateBackstageItem(item)
-
-                case 'Conjured Mana Cake':
-                    return updateConjuredItem(item)
-            
-                default:
-                    return updateDefaultItem(item)
-            }
-        })
+        return this.items.map(updateItem)
     }
 }
