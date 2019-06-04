@@ -1,9 +1,11 @@
+import * as fp from 'lodash/fp'
+
 const condition = <T>(predicate: (p: T) => boolean, truthy: (p: T) => T, falsey: (p: T) => T) => (item: T): T => 
     predicate(item) ? truthy(item) : falsey(item)
 
 const isExpired = (item: Item) => item.sellIn < 0
 
-const identity = <I>(i: I) => i 
+const identity = <I>(i: I): I => i 
 
 const decreaseSellIn = (item: Item): Item => {
     item.sellIn = item.sellIn - 1
@@ -30,6 +32,33 @@ const decreaseItemQuality = (item: Item): Item => {
 
     return item
 }
+
+const updateCheeseItem = fp.pipe(
+    increaseItemQuality,
+    condition(isExpired, increaseItemQuality, identity)
+)
+
+const increaseBackstageQuality = fp.pipe(
+    increaseItemQuality,
+    condition((item) => item.sellIn < 11, increaseItemQuality, identity),
+    condition((item) => item.sellIn < 6, increaseItemQuality, identity),
+)
+
+const updateBackstageItem = 
+    condition(isExpired, reduceQualityToZero, increaseBackstageQuality)
+
+const updateConjuredItem = fp.pipe(
+    decreaseItemQuality,
+    decreaseItemQuality,
+
+    condition(isExpired, decreaseItemQuality, identity),
+    condition(isExpired, decreaseItemQuality, identity)
+)
+
+const updateDefaultItem = fp.pipe(
+    decreaseItemQuality,
+    condition(isExpired, decreaseItemQuality, identity)
+)
 
 export class Item {
     name: string;
@@ -60,37 +89,16 @@ export class GildedRose {
 
             switch(item.name) {
                 case 'Aged Brie':
-                    item = increaseItemQuality(item)
-                    item = condition(isExpired, increaseItemQuality, identity)(item)
-                    
-                    return item
+                    return updateCheeseItem(item)
                 
                 case 'Backstage passes to a TAFKAL80ETC concert':
-                    if (isExpired(item)) {
-                        item = reduceQualityToZero(item)
-                        return item
-                    }
-
-                    item = increaseItemQuality(item)
-                    item = condition((item) => item.sellIn < 11, increaseItemQuality, identity)(item)
-                    item = condition((item) => item.sellIn < 6, increaseItemQuality, identity)(item)                                        
-
-                    return item
+                    return updateBackstageItem(item)
 
                 case 'Conjured Mana Cake':
-                    item = decreaseItemQuality(item)
-                    item = decreaseItemQuality(item)
-
-                    item = condition(isExpired, decreaseItemQuality, identity)(item)
-                    item = condition(isExpired, decreaseItemQuality, identity)(item)
-
-                    return item
+                    return updateConjuredItem(item)
             
                 default:
-                    item = decreaseItemQuality(item)
-                    item = condition(isExpired, decreaseItemQuality, identity)(item)
-                    
-                    return item
+                    return updateDefaultItem(item)
             }
         })
     }
