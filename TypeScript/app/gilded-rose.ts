@@ -1,11 +1,13 @@
 import * as fp from 'lodash/fp'
 
-const condition = <T>(predicate: (p: T) => boolean, truthy: (p: T) => T, falsey: (p: T) => T) => (item: T): T => 
+
+const identity = <I>(i: I): I => i 
+
+const condition = <T>(predicate: (p: T) => boolean, truthy: (p: T) => T, falsey: (p: T) => T = identity) => (item: T): T => 
     predicate(item) ? truthy(item) : falsey(item)
 
 const isExpired = (item: Item) => item.sellIn < 0
 
-const identity = <I>(i: I): I => i 
 
 const decreaseSellIn = (item: Item): Item => {
     item.sellIn = item.sellIn - 1
@@ -35,13 +37,13 @@ const decreaseItemQuality = (item: Item): Item => {
 
 const updateCheeseItem = fp.pipe(
     increaseItemQuality,
-    condition(isExpired, increaseItemQuality, identity)
+    condition(isExpired, increaseItemQuality)
 )
 
 const increaseBackstageQuality = fp.pipe(
     increaseItemQuality,
-    condition((item) => item.sellIn < 11, increaseItemQuality, identity),
-    condition((item) => item.sellIn < 6, increaseItemQuality, identity),
+    condition((item) => item.sellIn < 11, increaseItemQuality),
+    condition((item) => item.sellIn < 6, increaseItemQuality),
 )
 
 const updateBackstageItem = 
@@ -51,13 +53,13 @@ const updateConjuredItem = fp.pipe(
     decreaseItemQuality,
     decreaseItemQuality,
 
-    condition(isExpired, decreaseItemQuality, identity),
-    condition(isExpired, decreaseItemQuality, identity)
+    condition(isExpired, decreaseItemQuality),
+    condition(isExpired, decreaseItemQuality)
 )
 
 const updateDefaultItem = fp.pipe(
     decreaseItemQuality,
-    condition(isExpired, decreaseItemQuality, identity)
+    condition(isExpired, decreaseItemQuality)
 )
 
 export class Item {
